@@ -60,6 +60,21 @@ export async function selectOne<T>(table: string, filters: Filters): Promise<T |
   return rows[0] ?? null;
 }
 
+// Butterbase's PostgREST layer wants jsonb columns as JSON-encoded *strings*,
+// not nested objects. This wrapper auto-stringifies any object/array value so
+// callers can pass plain JS shapes.
+function encodeBody(data: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (v !== null && typeof v === "object") {
+      out[k] = JSON.stringify(v);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
 export async function insertRow<T>(
   table: string,
   data: Record<string, unknown>
@@ -67,7 +82,7 @@ export async function insertRow<T>(
   const res = await fetch(buildUrl(table), {
     method: "POST",
     headers: { ...baseHeaders, Prefer: "return=representation" },
-    body: JSON.stringify(data),
+    body: JSON.stringify(encodeBody(data)),
     cache: "no-store",
   });
   if (!res.ok) {
@@ -79,25 +94,27 @@ export async function insertRow<T>(
   return Array.isArray(rows) ? rows[0] : rows;
 }
 
-export async function updateRows<T>(
+// Update by primary key. Butterbase REST uses path-based IDs for PATCH:
+//   PATCH /v1/{app_id}/{table}/{id}
+// Query-string filters (?id=eq.x) do NOT work here — they 404.
+export async function updateRow<T>(
   table: string,
-  filters: Filters,
+  id: string,
   data: Record<string, unknown>
-): Promise<T[]> {
-  const url = buildUrl(table);
-  for (const [k, v] of Object.entries(filters)) url.searchParams.set(k, v);
-  const res = await fetch(url, {
+): Promise<T> {
+  const res = await fetch(`${apiUrl}/${table}/${id}`, {
     method: "PATCH",
     headers: { ...baseHeaders, Prefer: "return=representation" },
-    body: JSON.stringify(data),
+    body: JSON.stringify(encodeBody(data)),
     cache: "no-store",
   });
   if (!res.ok) {
     throw new Error(
-      `Butterbase update ${table} failed: ${res.status} ${await res.text()}`
+      `Butterbase update ${table}/${id} failed: ${res.status} ${await res.text()}`
     );
   }
-  return res.json();
+  const row = await res.json();
+  return Array.isArray(row) ? row[0] : row;
 }
 
 // ---- Domain types matching the Butterbase schema ----
