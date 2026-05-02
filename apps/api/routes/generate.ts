@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { mkdir, readFile, unlink } from 'fs/promises';
 import { join, resolve } from 'path';
 
@@ -16,6 +17,7 @@ import { generateVideo } from './seedance';
 import { stitch, getDuration } from '../lib/ffmpeg';
 
 const app = new Hono();
+app.use(cors());
 const PORT = parseInt(process.env.API_PORT ?? '4000');
 const VIDEOS_DIR = resolve(__dirname, '../../../demo/recordings');
 const BB_URL = process.env.BUTTERBASE_API_URL!;
@@ -103,7 +105,8 @@ async function runPipeline(trainingId: string, sopId: string) {
 
     // 10. Update Butterbase with final results
 
-    const videoUrl = `http://localhost:${PORT}/videos/${trainingId}.mp4`;
+    const publicApiUrl = process.env.PUBLIC_API_URL ?? `http://localhost:${PORT}`;
+    const videoUrl = `${publicApiUrl}/videos/${trainingId}.mp4`;
     await bb('PATCH', `trainings/${trainingId}`, {
       status: 'ready',
       video_url: videoUrl,
