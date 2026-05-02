@@ -52,7 +52,7 @@ Return ONLY valid JSON with this exact structure — no markdown, no explanation
 }
 
 Rules:
-- 4–6 scenes. Voiceover is 2–3 spoken sentences — clear and direct.
+- 3–4 scenes. Voiceover is 2–3 spoken sentences — clear and direct.
 - 5–7 quiz questions; at least 2 must be scenario-based. Exactly 4 options each.
 - 5–8 checklist items. Start each with an action verb. No fluff.`,
       },
