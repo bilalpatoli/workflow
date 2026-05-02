@@ -1,17 +1,23 @@
 import dotenv from 'dotenv';
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { mkdir, readFile, unlink } from 'fs/promises';
 import { join, resolve } from 'path';
 
 // .env lives at workspace root, two levels above apps/api/routes/
 dotenv.config({ path: resolve(__dirname, '../../../.env') });
 import { planner } from '../../../agents/planner';
+import { scriptWriter } from '../../../agents/script-writer';
 import { sceneDirector } from '../../../agents/scene-director';
+import { quizGenerator } from '../../../agents/quiz-generator';
+import { checklist } from '../../../agents/checklist';
+import { qaRubric } from '../../../agents/qa-rubric';
 import { generateVideo } from './seedance';
 import { stitch, getDuration } from '../lib/ffmpeg';
 
 const app = new Hono();
+app.use(cors());
 const PORT = parseInt(process.env.API_PORT ?? '4000');
 const VIDEOS_DIR = resolve(__dirname, '../../../demo/recordings');
 const BB_URL = process.env.BUTTERBASE_API_URL!;
@@ -67,32 +73,47 @@ async function runPipeline(trainingId: string, sopId: string) {
     console.log(`[${trainingId}] planning...`);
     const plan = await planner(sop.source_text);
 
-    // 4. Scene director: scenes → visual prompts for Seedance
-    console.log(`[${trainingId}] directing ${plan.scenes.length} scenes...`);
-    const scenes = await sceneDirector(plan.scenes);
+    // 4. Script writer: refine voiceovers into polished narration
+    console.log(`[${trainingId}] scripting...`);
+    const script = await scriptWriter(plan);
 
-    // 5. Generate video clips in parallel (narration baked into Seedance prompt)
+    // 5. Run quiz, checklist, and QA rubric in parallel off SOP + script
+    console.log(`[${trainingId}] generating quiz, checklist, rubric...`);
+    const [quiz, checklistItems, rubric] = await Promise.all([
+      quizGenerator(sop.source_text, script),
+      checklist(sop.source_text),
+      qaRubric(sop.source_text),
+    ]);
+
+    // 6. Scene director: scenes → visual prompts for Seedance
+    console.log(`[${trainingId}] directing ${script.scenes.length} scenes...`);
+    const scenes = await sceneDirector(script.scenes);
+
+    // 7. Generate video clips in parallel (narration baked into Seedance prompt)
     console.log(`[${trainingId}] generating ${scenes.length} clips in parallel...`);
     const clips = await Promise.all(scenes.map(s => generateVideo(s.visualPrompt, 5, s.voiceover)));
 
-    // 6. FFmpeg: concat clips (no separate audio track)
+    // 8. FFmpeg: concat clips
     console.log(`[${trainingId}] stitching...`);
     await mkdir(VIDEOS_DIR, { recursive: true });
     const outputPath = join(VIDEOS_DIR, `${trainingId}.mp4`);
     await stitch(clips, null, outputPath);
     const durationSeconds = await getDuration(outputPath);
 
-    // 7. Cleanup temp files
+    // 9. Cleanup temp files
     await Promise.all(clips.map(f => unlink(f).catch(() => {})));
 
-    // 8. Update Butterbase with final results
-    const videoUrl = `http://localhost:${PORT}/videos/${trainingId}.mp4`;
+    // 10. Update Butterbase with final results
+
+    const publicApiUrl = process.env.PUBLIC_API_URL ?? `http://localhost:${PORT}`;
+    const videoUrl = `${publicApiUrl}/videos/${trainingId}.mp4`;
     await bb('PATCH', `trainings/${trainingId}`, {
       status: 'ready',
       video_url: videoUrl,
       duration_seconds: durationSeconds,
-      quiz_json: plan.quiz,
-      checklist_json: plan.checklist,
+      quiz_json: quiz,
+      checklist_json: checklistItems,
+      rubric_json: rubric,
     });
 
     console.log(`[${trainingId}] done → ${videoUrl}`);
