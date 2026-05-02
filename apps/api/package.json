@@ -1,0 +1,14 @@
+{
+  "name": "api",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch routes/generate.ts",
+    "build": "tsc"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5"
+  }
+}
