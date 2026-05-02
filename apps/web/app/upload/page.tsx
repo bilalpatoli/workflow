@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { insertRow, DEMO_COMPANY_ID, type Sop, type Training } from "../../lib/butterbase";
+import { simulatePipeline } from "../../lib/mockPipeline";
 
 type SourceType = "text" | "loom" | "file";
 
@@ -36,17 +37,24 @@ export default function UploadPage() {
         status: "pending",
       });
 
-      // 3. Fire-and-forget: tell Kyle's pipeline to start
-      // (Kyle's API endpoint URL goes here once he ships it.)
+      // 3. Try to call Kyle's real pipeline first; if unavailable,
+      //    fall back to the client-side mock pipeline so the demo still flows.
       const kylesApiUrl = process.env.NEXT_PUBLIC_PIPELINE_URL;
+      let realPipelineCalled = false;
       if (kylesApiUrl) {
-        fetch(`${kylesApiUrl}/api/generate-video`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ trainingId: training.id, sopId: sop.id }),
-        }).catch(() => {
-          // Fire and forget — viewer polls status from Butterbase regardless.
-        });
+        try {
+          const res = await fetch(`${kylesApiUrl}/api/generate-video`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ trainingId: training.id, sopId: sop.id }),
+          });
+          if (res.ok) realPipelineCalled = true;
+        } catch {
+          // network error → fall through to mock
+        }
+      }
+      if (!realPipelineCalled) {
+        simulatePipeline(training.id);
       }
 
       // 4. Redirect to the viewer
