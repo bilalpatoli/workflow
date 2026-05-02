@@ -34,6 +34,7 @@ export async function stitch(clips: string[], audio: string | null, out: string)
   });
 }
 
+
 export function getDuration(filepath: string): Promise<number> {
   return new Promise((resolve, reject) => {
     Ffmpeg.ffprobe(filepath, (err, data) => {
