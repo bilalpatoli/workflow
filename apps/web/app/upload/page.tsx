@@ -68,7 +68,7 @@ export default function UploadPage() {
           const res = await fetch(`${kylesApiUrl}/api/generate-video`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ trainingId: training.id, sopId: sop.id }),
+            body: JSON.stringify({ training_id: training.id, sop_id: sop.id }),
           });
           if (res.ok) realPipelineCalled = true;
         } catch {
