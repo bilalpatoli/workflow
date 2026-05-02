@@ -1,4 +1,6 @@
 export type IntakeProfile = {
+  name: string;
+  email: string;
   role: string;
   company: string;
   trainingGoal: string;
@@ -6,3 +8,4 @@ export type IntakeProfile = {
 };
 
 export const INTAKE_STORAGE_KEY = "workflow:intake";
+export const TRAINEE_STORAGE_KEY = "workflow:trainee_id";

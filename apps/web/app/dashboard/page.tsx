@@ -20,6 +20,7 @@ type Row = {
 export default function DashboardPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [trainings, setTrainings] = useState<Training[]>([]);
+  const [traineesById, setTraineesById] = useState<Map<string, Trainee>>(new Map());
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +50,9 @@ export default function DashboardPage() {
         const sopById = new Map(sops.map((s) => [s.id, s]));
         const trainingById = new Map(trainings.map((t) => [t.id, t]));
         const traineeById = new Map(trainees.map((t) => [t.id, t]));
+
+        // Stash trainees in state so the trainings list can show the creator.
+        setTraineesById(traineeById);
 
         const joined: Row[] = attempts.flatMap((a) => {
           const training = trainingById.get(a.training_id);
@@ -84,15 +88,27 @@ export default function DashboardPage() {
         <p className="muted">No trainings yet. <a href="/onboarding">Create training →</a></p>
       ) : (
         <div>
-          {trainings.map((t) => (
-            <div key={t.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <a href={`/training?id=${t.id}`}><strong>Training {t.id.slice(0, 8)}</strong></a>
-                <p className="muted" style={{ marginBottom: 0 }}>Created {new Date(t.created_at).toLocaleString()}</p>
+          {trainings.map((t) => {
+            const creator = t.creator_trainee_id ? traineesById.get(t.creator_trainee_id) : null;
+            return (
+              <div key={t.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <a href={`/training?id=${t.id}`}><strong>Training {t.id.slice(0, 8)}</strong></a>
+                  {creator ? (
+                    <p className="muted" style={{ marginBottom: 0 }}>
+                      Created by <strong>{creator.name}</strong>{creator.role ? ` · ${creator.role}` : ""}{creator.company_name ? ` · ${creator.company_name}` : ""} · {creator.email}
+                    </p>
+                  ) : (
+                    <p className="muted" style={{ marginBottom: 0 }}>No creator on file</p>
+                  )}
+                  <p className="muted" style={{ marginBottom: 0, fontSize: "0.85rem" }}>
+                    {new Date(t.created_at).toLocaleString()}
+                  </p>
+                </div>
+                <span className={`badge badge-${t.status}`}>{t.status}</span>
               </div>
-              <span className={`badge badge-${t.status}`}>{t.status}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

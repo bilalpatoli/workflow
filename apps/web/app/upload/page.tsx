@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { insertRow, DEMO_COMPANY_ID, type Sop, type Training } from "../../lib/butterbase";
+import { insertRow, DEMO_COMPANY_ID, type Sop, type Trainee, type Training } from "../../lib/butterbase";
 import { simulatePipeline } from "../../lib/mockPipeline";
 import { uploadFile } from "../../lib/storage";
-import { INTAKE_STORAGE_KEY, type IntakeProfile } from "../../lib/intake";
+import { INTAKE_STORAGE_KEY, TRAINEE_STORAGE_KEY, type IntakeProfile } from "../../lib/intake";
 
 type SourceType = "file" | "text" | "loom";
 
@@ -92,10 +92,27 @@ export default function UploadPage() {
         source_url: resolvedSourceUrl,
       });
 
-      // 2. Insert pending training row
+      // 2. Upsert the trainee from intake so the manager dashboard knows who
+      //    created this training. We persist the trainee_id to sessionStorage
+      //    so the training viewer can skip re-asking name/email later.
+      let creatorTraineeId: string | null = null;
+      if (intake?.name && intake?.email) {
+        const trainee = await insertRow<Trainee>("trainees", {
+          company_id: DEMO_COMPANY_ID,
+          name: intake.name,
+          email: intake.email,
+          role: intake.role || null,
+          company_name: intake.company || null,
+        });
+        creatorTraineeId = trainee.id;
+        sessionStorage.setItem(TRAINEE_STORAGE_KEY, trainee.id);
+      }
+
+      // 3. Insert pending training row, linked back to the creator
       const training = await insertRow<Training>("trainings", {
         sop_id: sop.id,
         status: "pending",
+        creator_trainee_id: creatorTraineeId,
       });
 
       // 3. Try to call Kyle's real pipeline first; if unavailable,

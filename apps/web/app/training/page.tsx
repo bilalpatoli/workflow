@@ -13,6 +13,7 @@ import {
   type QuizItem,
   type ChecklistItem,
 } from "../../lib/butterbase";
+import { INTAKE_STORAGE_KEY, TRAINEE_STORAGE_KEY, type IntakeProfile } from "../../lib/intake";
 
 function StatusBadge({ status }: { status: Training["status"] }) {
   return <span className={`badge badge-${status}`}>{status}</span>;
@@ -30,6 +31,24 @@ function TrainingViewer({ trainingId }: { trainingId: string }) {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [completed, setCompleted] = useState<{ score: number } | null>(null);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
+
+  // Hydrate trainee identity from the intake step. If we already created a
+  // trainee row at upload time, reuse it so the manager dashboard shows a
+  // single coherent identity per person.
+  useEffect(() => {
+    const savedId = sessionStorage.getItem(TRAINEE_STORAGE_KEY);
+    if (savedId) setTraineeId(savedId);
+    const rawIntake = sessionStorage.getItem(INTAKE_STORAGE_KEY);
+    if (rawIntake) {
+      try {
+        const intake = JSON.parse(rawIntake) as IntakeProfile;
+        if (intake.name) setTraineeName(intake.name);
+        if (intake.email) setTraineeEmail(intake.email);
+      } catch {
+        // ignore malformed intake
+      }
+    }
+  }, []);
 
   // Poll training row until ready
   useEffect(() => {
