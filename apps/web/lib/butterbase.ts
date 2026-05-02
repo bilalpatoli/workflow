@@ -1,22 +1,22 @@
-// Butterbase REST client (server-only).
+// Butterbase REST client (works in both server and browser).
 //
-// All DB access goes through server components / server actions, using the
-// service key. Never import this from a client component.
+// For hackathon scope, RLS is OFF — the browser can read/write all tables
+// directly with no auth header. Service key stays only on Kyle's pipeline
+// (server-side from his machine).
+//
+// Post-hackathon TODO: enable RLS, add Butterbase auth, scope writes per
+// authenticated user.
 
-import "server-only";
-
-const apiUrl = process.env.BUTTERBASE_API_URL;
-const serviceKey = process.env.BUTTERBASE_SERVICE_KEY;
+const apiUrl =
+  process.env.NEXT_PUBLIC_BUTTERBASE_API_URL ?? process.env.BUTTERBASE_API_URL;
 
 if (!apiUrl) {
-  throw new Error("BUTTERBASE_API_URL is not set");
-}
-if (!serviceKey) {
-  throw new Error("BUTTERBASE_SERVICE_KEY is not set");
+  throw new Error(
+    "NEXT_PUBLIC_BUTTERBASE_API_URL is not set — see apps/web/.env.local"
+  );
 }
 
-const baseHeaders = {
-  Authorization: `Bearer ${serviceKey}`,
+const baseHeaders: Record<string, string> = {
   "Content-Type": "application/json",
   Accept: "application/json",
 };
@@ -30,17 +30,14 @@ type SelectOptions = {
   select?: string;
 };
 
-function buildUrl(table: string, params?: Record<string, string | number>) {
-  const url = new URL(`${apiUrl}/${table}`);
-  if (params) {
-    for (const [k, v] of Object.entries(params)) {
-      url.searchParams.set(k, String(v));
-    }
-  }
-  return url;
+function buildUrl(table: string) {
+  return new URL(`${apiUrl}/${table}`);
 }
 
-export async function selectRows<T>(table: string, options: SelectOptions = {}): Promise<T[]> {
+export async function selectRows<T>(
+  table: string,
+  options: SelectOptions = {}
+): Promise<T[]> {
   const url = buildUrl(table);
   if (options.filters) {
     for (const [k, v] of Object.entries(options.filters)) url.searchParams.set(k, v);
@@ -51,7 +48,9 @@ export async function selectRows<T>(table: string, options: SelectOptions = {}):
 
   const res = await fetch(url, { headers: baseHeaders, cache: "no-store" });
   if (!res.ok) {
-    throw new Error(`Butterbase select ${table} failed: ${res.status} ${await res.text()}`);
+    throw new Error(
+      `Butterbase select ${table} failed: ${res.status} ${await res.text()}`
+    );
   }
   return res.json();
 }
@@ -61,16 +60,20 @@ export async function selectOne<T>(table: string, filters: Filters): Promise<T |
   return rows[0] ?? null;
 }
 
-export async function insertRow<T>(table: string, data: Record<string, unknown>): Promise<T> {
-  const url = buildUrl(table);
-  const res = await fetch(url, {
+export async function insertRow<T>(
+  table: string,
+  data: Record<string, unknown>
+): Promise<T> {
+  const res = await fetch(buildUrl(table), {
     method: "POST",
     headers: { ...baseHeaders, Prefer: "return=representation" },
     body: JSON.stringify(data),
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new Error(`Butterbase insert ${table} failed: ${res.status} ${await res.text()}`);
+    throw new Error(
+      `Butterbase insert ${table} failed: ${res.status} ${await res.text()}`
+    );
   }
   const rows = await res.json();
   return Array.isArray(rows) ? rows[0] : rows;
@@ -90,7 +93,9 @@ export async function updateRows<T>(
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new Error(`Butterbase update ${table} failed: ${res.status} ${await res.text()}`);
+    throw new Error(
+      `Butterbase update ${table} failed: ${res.status} ${await res.text()}`
+    );
   }
   return res.json();
 }
@@ -156,3 +161,6 @@ export type QuizAttempt = {
   score: number | null;
   answers_json: Array<{ qId: string; selectedIndex: number; correct: boolean }> | null;
 };
+
+// Hardcoded demo company — single tenant for hackathon scope.
+export const DEMO_COMPANY_ID = "b737fb2e-71f2-4a02-8b99-0645086f9bce";
