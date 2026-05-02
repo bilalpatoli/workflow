@@ -16,6 +16,8 @@ const SAMPLE_VIDEO_URL =
 const apiUrl =
   process.env.NEXT_PUBLIC_BUTTERBASE_API_URL ?? process.env.BUTTERBASE_API_URL;
 
+const VIDEO_DURATION_SECONDS = 10;
+
 const PLACEHOLDER_QUIZ = [
   {
     id: "q1",
@@ -53,6 +55,19 @@ async function generateQuizAndChecklist(sopText: string): Promise<{
   return res.json();
 }
 
+async function generateVideo(sopText: string): Promise<{ video_url: string; duration_seconds: number }> {
+  if (!apiUrl) throw new Error("Butterbase API URL not configured");
+  const res = await fetch(`${apiUrl}/fn/generate-video`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sop: sopText, duration: VIDEO_DURATION_SECONDS }),
+  });
+  if (!res.ok) {
+    throw new Error(`generate-video ${res.status}: ${await res.text()}`);
+  }
+  return res.json();
+}
+
 export function simulatePipeline(trainingId: string, sopId: string) {
   // Step 1: pending → generating after a beat so the loading UI has time to show.
   setTimeout(() => {
@@ -61,37 +76,37 @@ export function simulatePipeline(trainingId: string, sopId: string) {
     });
   }, 4000);
 
-  // Step 2: generating → ready. Kick off Z.AI generation in parallel with a
-  // delay so the spinner has presence even when Z.AI returns fast.
+  // Step 2: generating → ready. Kick off quiz/checklist and video generation
+  // in parallel against the real SOP. The video call is the long pole
+  // (Seedance via ImaRouter, ~1-4 min); quiz/checklist returns much faster
+  // so it comfortably finishes inside the same window.
   (async () => {
-    const generationStarted = Date.now();
-    const minDuration = 12000;
+    const sop = await selectOne<Sop>("sops", { id: `eq.${sopId}` }).catch(() => null);
+    const sopText = sop?.source_text ?? "";
 
-    let quiz = PLACEHOLDER_QUIZ;
-    let checklist = PLACEHOLDER_CHECKLIST;
-    try {
-      const sop = await selectOne<Sop>("sops", { id: `eq.${sopId}` });
-      if (sop?.source_text) {
-        const result = await generateQuizAndChecklist(sop.source_text);
-        if (result.quiz?.length) quiz = result.quiz;
-        if (result.checklist?.length) checklist = result.checklist;
-      }
-    } catch (e) {
-      console.error("Mock pipeline (Z.AI generation) failed, using placeholders:", e);
-    }
+    const quizPromise: Promise<{ quiz: typeof PLACEHOLDER_QUIZ; checklist: typeof PLACEHOLDER_CHECKLIST }> = sopText
+      ? generateQuizAndChecklist(sopText).catch((e) => {
+          console.error("Mock pipeline (quiz/checklist) failed, using placeholders:", e);
+          return { quiz: PLACEHOLDER_QUIZ, checklist: PLACEHOLDER_CHECKLIST };
+        })
+      : Promise.resolve({ quiz: PLACEHOLDER_QUIZ, checklist: PLACEHOLDER_CHECKLIST });
 
-    const elapsed = Date.now() - generationStarted;
-    if (elapsed < minDuration) {
-      await new Promise((r) => setTimeout(r, minDuration - elapsed));
-    }
+    const videoPromise: Promise<{ video_url: string; duration_seconds: number }> = sopText
+      ? generateVideo(sopText).catch((e) => {
+          console.error("Mock pipeline (video) failed, falling back to sample MP4:", e);
+          return { video_url: SAMPLE_VIDEO_URL, duration_seconds: 60 };
+        })
+      : Promise.resolve({ video_url: SAMPLE_VIDEO_URL, duration_seconds: 60 });
+
+    const [{ quiz, checklist }, video] = await Promise.all([quizPromise, videoPromise]);
 
     try {
       await updateRow("trainings", trainingId, {
         status: "ready",
-        video_url: SAMPLE_VIDEO_URL,
-        duration_seconds: 60,
-        quiz_json: quiz,
-        checklist_json: checklist,
+        video_url: video.video_url,
+        duration_seconds: video.duration_seconds,
+        quiz_json: quiz?.length ? quiz : PLACEHOLDER_QUIZ,
+        checklist_json: checklist?.length ? checklist : PLACEHOLDER_CHECKLIST,
       });
     } catch (e) {
       console.error("Mock pipeline (ready) failed:", e);
