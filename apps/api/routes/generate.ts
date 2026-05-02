@@ -89,9 +89,10 @@ async function runPipeline(trainingId: string, sopId: string) {
     console.log(`[${trainingId}] directing ${script.scenes.length} scenes...`);
     const scenes = await sceneDirector(script.scenes);
 
-    // 7. Generate video clips in parallel (narration baked into Seedance prompt)
-    console.log(`[${trainingId}] generating ${scenes.length} clips in parallel...`);
-    const clips = await Promise.all(scenes.map(s => generateVideo(s.visualPrompt, 5, s.voiceover)));
+    // 7. Generate a single 10-second clip
+    const [firstScene] = scenes;
+    console.log(`[${trainingId}] generating 1 clip (10s)...`);
+    const clips = [await generateVideo(firstScene.visualPrompt, 10, firstScene.voiceover)];
 
     // 8. FFmpeg: concat clips
     console.log(`[${trainingId}] stitching...`);
