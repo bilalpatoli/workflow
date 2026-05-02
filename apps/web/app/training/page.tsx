@@ -19,6 +19,43 @@ function StatusBadge({ status }: { status: Training["status"] }) {
   return <span className={`badge badge-${status}`}>{status}</span>;
 }
 
+const GENERATING_WORDS = [
+  "Planning",
+  "Scripting",
+  "Directing",
+  "Generating",
+  "Narrating",
+  "Stitching",
+];
+
+function GeneratingState() {
+  const [wordIndex, setWordIndex] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setWordIndex((i) => (i + 1) % GENERATING_WORDS.length);
+    }, 1400);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="card generating-card">
+      <div className="spinner-ring" aria-hidden />
+      <h2 style={{ fontSize: "1.5rem", marginBottom: "0.75rem" }}>
+        <span key={wordIndex} className="cycling-word">
+          {GENERATING_WORDS[wordIndex]}
+        </span>{" "}
+        your training…
+      </h2>
+      <p className="muted" style={{ maxWidth: "44ch", margin: "0 auto 0.5rem" }}>
+        We&apos;re planning the script, generating each scene with Seedance, narrating with ElevenLabs, and stitching it together. This usually takes 1–2 minutes.
+      </p>
+      <p className="muted" style={{ fontSize: "0.85rem", margin: 0 }}>
+        Polling every 3 seconds. This page will update automatically.
+      </p>
+    </div>
+  );
+}
+
 function TrainingViewer({ trainingId }: { trainingId: string }) {
   const [training, setTraining] = useState<Training | null>(null);
   const [sop, setSop] = useState<Sop | null>(null);
@@ -134,15 +171,9 @@ function TrainingViewer({ trainingId }: { trainingId: string }) {
         <StatusBadge status={training.status} />
       </p>
 
-      {training.status === "pending" || training.status === "generating" ? (
-        <div className="card">
-          <h2>Generating your training…</h2>
-          <p className="muted">
-            We're planning the script, generating each scene with Seedance, narrating with ElevenLabs, and stitching it together. This usually takes 1–2 minutes.
-          </p>
-          <p className="muted">Polling every 3 seconds. This page will update automatically.</p>
-        </div>
-      ) : null}
+      {(training.status === "pending" || training.status === "generating") && (
+        <GeneratingState />
+      )}
 
       {training.status === "failed" && (
         <div className="card">

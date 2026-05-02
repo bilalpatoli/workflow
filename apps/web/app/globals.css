@@ -358,3 +358,41 @@ label {
 
 /* On dark surfaces */
 .closing p { color: rgb(255 255 255 / 0.7); margin: 0 auto 1.5rem; }
+
+/* Generating-state spinner + cycling word */
+.generating-card {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.spinner-ring {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 4px solid var(--ink-100);
+  border-top-color: var(--signal-blue);
+  border-right-color: var(--signal-teal);
+  animation: spin 1.1s linear infinite;
+  margin: 0 auto 1.5rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.cycling-word {
+  display: inline-block;
+  min-width: 7ch;
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  font-weight: 600;
+  animation: word-fade 500ms ease;
+}
+
+@keyframes word-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
