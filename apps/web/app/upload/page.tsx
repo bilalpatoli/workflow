@@ -7,9 +7,10 @@ import { simulatePipeline } from "../../lib/mockPipeline";
 import { uploadFile } from "../../lib/storage";
 import { INTAKE_STORAGE_KEY, type IntakeProfile } from "../../lib/intake";
 
-type SourceType = "text" | "loom" | "file";
+type SourceType = "file" | "text" | "loom";
 
-const ACCEPTED_TYPES = ".pdf,.md,.txt,.doc,.docx";
+const ACCEPTED_TYPES =
+  ".pdf,.md,.txt,.doc,.docx,.rtf,.html,.json,.csv,.png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.webm,.mp3,.wav,.m4a";
 
 function prependIntakeContext(body: string, intake: IntakeProfile): string {
   const header = [
@@ -28,10 +29,10 @@ function prependIntakeContext(body: string, intake: IntakeProfile): string {
 export default function UploadPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
-  const [sourceType, setSourceType] = useState<SourceType>("text");
+  const [sourceType, setSourceType] = useState<SourceType>("file");
   const [sourceText, setSourceText] = useState("");
   const [loomUrl, setLoomUrl] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,11 +66,20 @@ export default function UploadPage() {
       } else if (sourceType === "loom") {
         resolvedSourceUrl = loomUrl;
       } else if (sourceType === "file") {
-        if (!file) throw new Error("Pick a file to upload first.");
-        setUploadProgress(`Uploading ${file.name}…`);
-        const uploaded = await uploadFile(file);
-        // Save the objectId — pipeline consumers can mint a download URL with it.
-        resolvedSourceUrl = `butterbase-object:${uploaded.objectId}`;
+        if (files.length === 0) throw new Error("Pick at least one file to upload first.");
+        const objectIds: string[] = [];
+        for (let i = 0; i < files.length; i++) {
+          const f = files[i];
+          setUploadProgress(`Uploading ${f.name} (${i + 1}/${files.length})…`);
+          const uploaded = await uploadFile(f);
+          objectIds.push(uploaded.objectId);
+        }
+        // One id → single-object reference; many → comma-joined list. Pipeline
+        // consumers can mint download URLs from each id.
+        resolvedSourceUrl =
+          objectIds.length === 1
+            ? `butterbase-object:${objectIds[0]}`
+            : `butterbase-objects:${objectIds.join(",")}`;
         setUploadProgress(null);
       }
 
@@ -124,7 +134,7 @@ export default function UploadPage() {
         <span className="eyebrow">Step 2 of 2 · Add the source material</span>
       </div>
       <h1>Create training</h1>
-      <p className="muted">Paste text, drop a Loom URL, or upload a doc. We&apos;ll generate a training video, quiz, and checklist.</p>
+      <p className="muted">Upload files or a folder from your computer — docs, slides, recordings, screenshots. Or paste text or drop a Loom link. We&apos;ll turn it into a training video, quiz, and checklist.</p>
 
       {intake && (
         <div className="card" style={{ background: "var(--ink-50)", marginTop: "1rem" }}>
@@ -152,21 +162,22 @@ export default function UploadPage() {
           placeholder="e.g. Hire a BDR for an AI Company"
         />
 
-        <label>Source</label>
+        <label>How do you want to share it?</label>
         <select value={sourceType} onChange={(e) => setSourceType(e.target.value as SourceType)}>
+          <option value="file">Upload from my computer</option>
           <option value="text">Paste text</option>
           <option value="loom">Loom URL</option>
-          <option value="file">Upload doc (.pdf, .md, .txt, .docx)</option>
         </select>
 
         {sourceType === "text" && (
           <>
-            <label>SOP content</label>
+            <label>Training material</label>
             <textarea
               required
               value={sourceText}
               onChange={(e) => setSourceText(e.target.value)}
-              placeholder={"# Goal\nHire a BDR…\n\n## Steps\n1. …"}
+              placeholder={"Paste anything that explains the work — notes, a transcript, a checklist, or a step-by-step doc."}
+              style={{ fontFamily: "var(--font-inter)", fontSize: "1rem" }}
             />
           </>
         )}
@@ -186,20 +197,36 @@ export default function UploadPage() {
 
         {sourceType === "file" && (
           <>
-            <label>Document</label>
+            <label>Pick files</label>
             <input
-              required
               type="file"
+              multiple
               accept={ACCEPTED_TYPES}
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
             />
-            {file && (
-              <p className="muted" style={{ marginTop: "-0.5rem" }}>
-                {file.name} · {Math.round(file.size / 1024)} KB
-              </p>
+
+            <label style={{ marginTop: "0.75rem" }}>…or pick a whole folder</label>
+            <input
+              type="file"
+              multiple
+              // @ts-expect-error — webkitdirectory is non-standard but widely supported
+              webkitdirectory=""
+              directory=""
+              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+            />
+
+            {files.length > 0 && (
+              <ul className="muted" style={{ margin: "0 0 1rem 1.1rem", fontSize: "0.9rem" }}>
+                {files.map((f, i) => (
+                  <li key={`${f.name}-${i}`}>
+                    {f.webkitRelativePath || f.name} · {Math.round(f.size / 1024)} KB
+                  </li>
+                ))}
+              </ul>
             )}
+
             <p className="muted" style={{ fontSize: "0.85rem" }}>
-              Max 10 MB. Accepted: PDF, Markdown, plain text, Word.
+              Docs, slides, recordings, screenshots — anything that explains the work. Multiple files welcome. 10 MB per file.
             </p>
           </>
         )}
