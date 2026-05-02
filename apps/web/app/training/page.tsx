@@ -47,10 +47,10 @@ function GeneratingState() {
         your training…
       </h2>
       <p className="muted" style={{ maxWidth: "44ch", margin: "0 auto 0.5rem" }}>
-        We&apos;re planning the script, generating each scene with Seedance, narrating with ElevenLabs, and stitching it together. This usually takes 1–2 minutes.
+        Flowing through your material to script the scenes, narrate them, and stitch it all into one short video. Usually 1–2 minutes.
       </p>
       <p className="muted" style={{ fontSize: "0.85rem", margin: 0 }}>
-        Polling every 3 seconds. This page will update automatically.
+        This page will update on its own — no need to refresh.
       </p>
     </div>
   );
