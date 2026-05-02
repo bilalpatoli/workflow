@@ -16,9 +16,9 @@ workflow/
 
 ## Owners
 
-- **Person A** — `apps/api/` video generation pipeline (Seedance, ElevenLabs, ffmpeg)
-- **Person B** — `apps/web/` Next.js portal on Butterbase
-- **Person C** — `agents/` and `prompts/` Z.AI prompt agents
+- **Kyle** — `apps/api/` video pipeline. Z.AI orchestration (planner → script → scene breakdown), Seedance per-scene clips, ElevenLabs TTS, FFmpeg stitch. Owns `/api/generate-video`.
+- **Bilal** — `apps/web/` portal on Butterbase. Auth, DB schema (companies → SOPs → trainings → trainees → quiz_attempts), upload flow, training viewer, manager dashboard. Owns the Butterbase MCP integration.
+- **Zo** — `agents/` + `prompts/` + `demo/`. Script, quiz, QA, checklist, retraining agents. Demo SOP, 3-slide deck, 2-min demo video, pitch.
 
 ## Getting started
 
