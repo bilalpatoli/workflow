@@ -43,6 +43,36 @@ async function readFileAsText(file: File): Promise<string> {
   });
 }
 
+function isPdfFile(file: File): boolean {
+  return file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+}
+
+async function extractPdfText(file: File): Promise<string> {
+  // Lazy-load pdfjs only when we actually need it so the rest of the bundle
+  // stays light.
+  const pdfjs = await import("pdfjs-dist");
+  // Use the CDN-hosted worker matching the installed pdfjs version. The
+  // static export can't easily ship the worker as an asset, and using a
+  // version-pinned CDN URL avoids version drift between page and worker.
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data: buffer }).promise;
+
+  const pageTexts: string[] = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const text = content.items
+      .map((item) => ("str" in item ? item.str : ""))
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (text) pageTexts.push(text);
+  }
+  return pageTexts.join("\n\n");
+}
+
 export default function UploadPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
@@ -91,9 +121,9 @@ export default function UploadPage() {
           setUploadProgress(`Uploading ${f.name} (${i + 1}/${files.length})…`);
           const uploaded = await uploadFile(f);
           objectIds.push(uploaded.objectId);
-          // Read text-like files inline so the quiz/video generators have
-          // content to work with even before any backend extractor runs.
-          // Binary files (PDF, docx, images, video, audio) are stored only
+          // Read text-like and PDF files inline so the quiz/video generators
+          // have content to work with even before any backend extractor runs.
+          // Other binary files (docx, images, video, audio) are stored only
           // by object id; downstream pipeline can extract them later.
           if (isTextLikeFile(f)) {
             try {
@@ -103,6 +133,16 @@ export default function UploadPage() {
               }
             } catch (err) {
               console.warn(`Could not read ${f.name} as text:`, err);
+            }
+          } else if (isPdfFile(f)) {
+            setUploadProgress(`Extracting text from ${f.name}…`);
+            try {
+              const body = await extractPdfText(f);
+              if (body.trim()) {
+                textBodies.push(`# ${f.name}\n\n${body}`);
+              }
+            } catch (err) {
+              console.warn(`Could not extract text from ${f.name}:`, err);
             }
           }
         }
