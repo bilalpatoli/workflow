@@ -69,18 +69,14 @@ async function generateVideo(sopText: string): Promise<{ video_url: string; dura
 }
 
 export function simulatePipeline(trainingId: string, sopId: string) {
-  // Step 1: pending → generating after a beat so the loading UI has time to show.
-  setTimeout(() => {
-    updateRow("trainings", trainingId, { status: "generating" }).catch((e) => {
+  // Linear flow so the prior race (setTimeout-driven "generating" overwrite
+  // landing AFTER the "ready" update) can't recur: flip to generating right
+  // away, then wait for both upstream calls, then flip to ready exactly once.
+  (async () => {
+    await updateRow("trainings", trainingId, { status: "generating" }).catch((e) => {
       console.error("Mock pipeline (generating) failed:", e);
     });
-  }, 4000);
 
-  // Step 2: generating → ready. Kick off quiz/checklist and video generation
-  // in parallel against the real SOP. The video call is the long pole
-  // (Seedance via ImaRouter, ~1-4 min); quiz/checklist returns much faster
-  // so it comfortably finishes inside the same window.
-  (async () => {
     const sop = await selectOne<Sop>("sops", { id: `eq.${sopId}` }).catch(() => null);
     const sopText = sop?.source_text ?? "";
 

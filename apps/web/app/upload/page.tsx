@@ -26,6 +26,23 @@ function prependIntakeContext(body: string, intake: IntakeProfile): string {
   return header + body;
 }
 
+const TEXTLIKE_EXTENSIONS = /\.(txt|md|markdown|csv|json|html|rtf)$/i;
+
+function isTextLikeFile(file: File): boolean {
+  if (file.type.startsWith("text/")) return true;
+  if (file.type === "application/json" || file.type === "application/rtf") return true;
+  return TEXTLIKE_EXTENSIONS.test(file.name);
+}
+
+async function readFileAsText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => reject(reader.error ?? new Error("Failed to read file"));
+    reader.readAsText(file);
+  });
+}
+
 export default function UploadPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
@@ -68,11 +85,26 @@ export default function UploadPage() {
       } else if (sourceType === "file") {
         if (files.length === 0) throw new Error("Pick at least one file to upload first.");
         const objectIds: string[] = [];
+        const textBodies: string[] = [];
         for (let i = 0; i < files.length; i++) {
           const f = files[i];
           setUploadProgress(`Uploading ${f.name} (${i + 1}/${files.length})…`);
           const uploaded = await uploadFile(f);
           objectIds.push(uploaded.objectId);
+          // Read text-like files inline so the quiz/video generators have
+          // content to work with even before any backend extractor runs.
+          // Binary files (PDF, docx, images, video, audio) are stored only
+          // by object id; downstream pipeline can extract them later.
+          if (isTextLikeFile(f)) {
+            try {
+              const body = await readFileAsText(f);
+              if (body.trim()) {
+                textBodies.push(`# ${f.name}\n\n${body}`);
+              }
+            } catch (err) {
+              console.warn(`Could not read ${f.name} as text:`, err);
+            }
+          }
         }
         // One id → single-object reference; many → comma-joined list. Pipeline
         // consumers can mint download URLs from each id.
@@ -80,6 +112,10 @@ export default function UploadPage() {
           objectIds.length === 1
             ? `butterbase-object:${objectIds[0]}`
             : `butterbase-objects:${objectIds.join(",")}`;
+        if (textBodies.length > 0) {
+          const combined = textBodies.join("\n\n---\n\n");
+          resolvedSourceText = intake ? prependIntakeContext(combined, intake) : combined;
+        }
         setUploadProgress(null);
       }
 
