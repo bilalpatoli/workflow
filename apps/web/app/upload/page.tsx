@@ -132,7 +132,7 @@ export default function UploadPage() {
         }
       }
       if (!realPipelineCalled) {
-        simulatePipeline(training.id);
+        simulatePipeline(training.id, sop.id);
       }
 
       // 4. Redirect to the viewer
