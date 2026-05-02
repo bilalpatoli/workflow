@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 240" fill="none" font-family="Geist, Inter, system-ui, -apple-system, Segoe UI, sans-serif">
+  <defs>
+    <linearGradient id="wfG2" x1="20" y1="20" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22C56E"></stop>
+      <stop offset="40%" stop-color="#1DB6B2"></stop>
+      <stop offset="75%" stop-color="#1F8FE8"></stop>
+      <stop offset="100%" stop-color="#1873E0"></stop>
+    </linearGradient>
+    <linearGradient id="wfTri2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22C56E"></stop>
+      <stop offset="100%" stop-color="#1F8FE8"></stop>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(20,20) scale(0.95)">
+    <g fill="none" stroke="url(#wfG2)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M48 36 H140 a14 14 0 0 1 14 14 V158 a14 14 0 0 1 -14 14 H86"></path>
+      <path d="M36 48 V96 a14 14 0 0 0 14 14 H72"></path>
+      <path d="M138 110 H146"></path>
+    </g>
+    <circle cx="36" cy="36" r="11" fill="#FFFFFF" stroke="#22C56E" stroke-width="10"></circle>
+    <circle cx="154" cy="110" r="11" fill="#FFFFFF" stroke="#1F8FE8" stroke-width="10"></circle>
+    <circle cx="154" cy="172" r="11" fill="#1F8FE8"></circle>
+    <circle cx="105" cy="110" r="22" fill="#FFFFFF" stroke="url(#wfG2)" stroke-width="10"></circle>
+    <path d="M93 110 L102 119 L118 100" stroke="url(#wfG2)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+    <circle cx="32" cy="158" r="4.5" fill="#1FB8B5"></circle>
+    <circle cx="48" cy="158" r="4.5" fill="#1F8FE8"></circle>
+    <circle cx="64" cy="158" r="4.5" fill="#1F8FE8"></circle>
+  </g>
+
+  <g transform="translate(240,170)">
+    <text font-size="150" font-weight="700" letter-spacing="-6" fill="#0E1726">WorkFlow</text>
+    <path d="M662 -116 L680 -116 L680 -98 Z" fill="url(#wfTri2)"></path>
+  </g>
+</svg>

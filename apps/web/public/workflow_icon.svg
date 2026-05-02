@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" fill="none">
+  <defs>
+    <linearGradient id="wfG" x1="20" y1="20" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22C56E"></stop>
+      <stop offset="35%" stop-color="#1DB6B2"></stop>
+      <stop offset="70%" stop-color="#1F8FE8"></stop>
+      <stop offset="100%" stop-color="#1873E0"></stop>
+    </linearGradient>
+  </defs>
+
+  <g fill="none" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    
+    <path d="M48 36 H140 a14 14 0 0 1 14 14 V104" stroke="url(#wfG)"></path>
+    
+    <path d="M36 48 V96 a14 14 0 0 0 14 14 H72" stroke="url(#wfG)"></path>
+    
+    <path d="M138 110 H156 a14 14 0 0 1 14 14 V158" stroke="url(#wfG)"></path>
+    
+    <path d="M154 124 V158 a14 14 0 0 1 -14 14 H86" stroke="url(#wfG)"></path>
+  </g>
+
+  
+  <circle cx="36" cy="36" r="11" fill="#FFFFFF" stroke="#22C56E" stroke-width="10"></circle>
+
+  
+  <circle cx="154" cy="116" r="11" fill="#FFFFFF" stroke="#1F8FE8" stroke-width="10"></circle>
+
+  
+  <circle cx="170" cy="172" r="11" fill="#1F8FE8"></circle>
+
+  
+  <circle cx="105" cy="110" r="22" fill="#FFFFFF" stroke="url(#wfG)" stroke-width="10"></circle>
+  <path d="M93 110 L102 119 L118 100" stroke="url(#wfG)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+
+  
+  <circle cx="32" cy="158" r="4.5" fill="#1FB8B5"></circle>
+  <circle cx="48" cy="158" r="4.5" fill="#1F8FE8"></circle>
+  <circle cx="64" cy="158" r="4.5" fill="#1F8FE8"></circle>
+</svg>
