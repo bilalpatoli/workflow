@@ -81,7 +81,7 @@ export async function insertRow<T>(
 ): Promise<T> {
   const res = await fetch(buildUrl(table), {
     method: "POST",
-    headers: { ...baseHeaders, Prefer: "return=representation" },
+    headers: baseHeaders,
     body: JSON.stringify(encodeBody(data)),
     cache: "no-store",
   });
@@ -104,7 +104,7 @@ export async function updateRow<T>(
 ): Promise<T> {
   const res = await fetch(`${apiUrl}/${table}/${id}`, {
     method: "PATCH",
-    headers: { ...baseHeaders, Prefer: "return=representation" },
+    headers: baseHeaders,
     body: JSON.stringify(encodeBody(data)),
     cache: "no-store",
   });
