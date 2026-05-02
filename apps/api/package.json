@@ -6,8 +6,17 @@
     "dev": "tsx watch routes/generate.ts",
     "build": "tsc"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@hono/node-server": "^1",
+    "dotenv": "^16",
+    "ffmpeg-static": "^5",
+    "fluent-ffmpeg": "^2",
+    "hono": "^4",
+    "openai": "^4"
+  },
   "devDependencies": {
+    "@types/fluent-ffmpeg": "^2",
+    "@types/node": "^20",
     "tsx": "^4.0.0",
     "typescript": "^5"
   }
