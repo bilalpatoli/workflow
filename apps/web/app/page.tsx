@@ -17,7 +17,7 @@ export default function LandingPage() {
         </p>
 
         <div className="hero-actions">
-          <a href="/upload" className="button">Upload an SOP →</a>
+          <a href="/upload" className="button">Create training →</a>
           <a href="/dashboard" className="button button-secondary">Manager view</a>
         </div>
       </section>
@@ -83,7 +83,7 @@ export default function LandingPage() {
       <section className="closing">
         <h2>Hand the routine to WorkFlow.</h2>
         <p>Less oversight. Fewer mistakes. Faster ramp-up.</p>
-        <a href="/upload" className="button">Upload an SOP →</a>
+        <a href="/upload" className="button">Create training →</a>
       </section>
     </main>
   );

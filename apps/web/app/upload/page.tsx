@@ -90,7 +90,7 @@ export default function UploadPage() {
 
   return (
     <main>
-      <h1>Upload an SOP</h1>
+      <h1>Create training</h1>
       <p className="muted">Paste text, drop a Loom URL, or upload a doc. We&apos;ll generate a training video, quiz, and checklist.</p>
 
       <form onSubmit={onSubmit} className="card">
