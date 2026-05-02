@@ -5,36 +5,38 @@ export default function LandingPage() {
       <section className="hero">
         <div className="section-label">
           <span className="brand-bar" aria-hidden />
-          <span className="eyebrow">The Autonomous Training Agent</span>
+          <span className="eyebrow">Your training portal</span>
         </div>
 
-        <h1 className="display-xl">
-          Repeatable work, run by an AI manager.
-        </h1>
+        <h1 className="display-xl">Get up to speed, your way.</h1>
 
         <p className="body-l">
-          Drop in an SOP, a Loom, or a checklist. WorkFlow turns it into role-specific training, execution checklists, quizzes, and QA feedback — and retrains employees when they make mistakes.
+          Watch a short video, take the quiz, and check off each step as you go. Every training is shaped to your role — train at your pace, replay it whenever you need.
         </p>
 
         <div className="hero-actions">
-          <a href="/upload" className="button">Create training →</a>
-          <a href="/dashboard" className="button button-secondary">Manager view</a>
+          <a href="/training?id=67c529b6-38a1-4e60-8e7f-46fd1f155075" className="button">
+            Start your training →
+          </a>
+          <a href="/dashboard" className="button button-secondary">
+            I&apos;m a manager →
+          </a>
         </div>
       </section>
 
-      {/* Metrics */}
-      <section className="metric-strip" aria-label="What changes">
+      {/* What you get */}
+      <section className="metric-strip" aria-label="What you get">
         <div className="metric">
-          <div className="metric-value">−63%</div>
-          <div className="metric-label">Repeated mistakes after first QA cycle</div>
+          <div className="metric-value">Under 5 min</div>
+          <div className="metric-label">Most trainings done in one sitting</div>
         </div>
         <div className="metric">
-          <div className="metric-value">2.4×</div>
-          <div className="metric-label">Faster employee ramp-up to full proficiency</div>
+          <div className="metric-value">Scored</div>
+          <div className="metric-label">Every quiz answer comes with the reasoning</div>
         </div>
         <div className="metric">
-          <div className="metric-value">9 hrs</div>
-          <div className="metric-label">Manager hours saved per role, per week</div>
+          <div className="metric-value">Replay</div>
+          <div className="metric-label">Come back anytime — your progress is saved</div>
         </div>
       </section>
 
@@ -43,47 +45,49 @@ export default function LandingPage() {
         <div className="section-label">
           <span className="eyebrow">How it works</span>
         </div>
-        <h2 className="display-l">From messy process to consistent execution.</h2>
+        <h2 className="display-l">Three short steps. No meetings.</h2>
 
         <div className="two-col">
           <div className="feature-card">
-            <h3>Teach</h3>
+            <h3>Watch &amp; answer</h3>
             <p className="body-m">
-              Drop in an SOP, a Loom, or a checklist. WorkFlow generates a role-specific video, scored quiz, and execution checklist from your actual process — in under two minutes.
+              A 60–90 second video walks you through the process. A few scored questions check you got the key points — with the reasoning explained, not just a green check.
             </p>
           </div>
           <div className="feature-card">
-            <h3>Verify &amp; retrain</h3>
+            <h3>Get coached when you slip</h3>
             <p className="body-m">
-              Execution checklists and QA feedback catch missed steps. Employees get retrained automatically — without a manager in the loop. Managers step in only on real exceptions.
+              Miss a step on the job? You&apos;ll get a focused refresher on just that part — not a meeting on Tuesday with your manager. Mistakes turn into practice, fast.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Product card */}
+      {/* Sample training */}
       <section style={{ marginTop: "2.5rem" }}>
         <div className="feature-card">
           <div className="section-label">
-            <span className="eyebrow">Product</span>
+            <span className="eyebrow">Try one now</span>
           </div>
           <h2 className="display-m" style={{ marginBottom: "0.75rem" }}>
-            An AI manager that learns your process — and runs the routine for you.
+            See what a training looks like.
           </h2>
           <p className="body-m" style={{ marginBottom: "1.25rem" }}>
-            Training, execution checks, quizzes, and QA all live in one place. Mistakes trigger targeted retraining, automatically.
+            Take a sample BDR-hiring training end-to-end: watch the video, answer four questions, and check off the steps. Two minutes total.
           </p>
           <a href="/training?id=67c529b6-38a1-4e60-8e7f-46fd1f155075" className="button button-secondary">
-            See a sample training →
+            Open the sample training →
           </a>
         </div>
       </section>
 
       {/* Closing */}
       <section className="closing">
-        <h2>Hand the routine to WorkFlow.</h2>
-        <p>Less oversight. Fewer mistakes. Faster ramp-up.</p>
-        <a href="/upload" className="button">Create training →</a>
+        <h2>Train when you have time.</h2>
+        <p>Watch when it works for you. Replay when you need to. No more sitting through someone else&apos;s slides.</p>
+        <a href="/training?id=67c529b6-38a1-4e60-8e7f-46fd1f155075" className="button">
+          Start your training →
+        </a>
       </section>
     </main>
   );
