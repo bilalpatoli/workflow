@@ -15,7 +15,7 @@ export default function LandingPage() {
         </p>
 
         <div className="hero-actions">
-          <a href="/training?id=67c529b6-38a1-4e60-8e7f-46fd1f155075" className="button">
+          <a href="/onboarding" className="button">
             Start your training →
           </a>
           <a href="/dashboard" className="button button-secondary">
@@ -85,7 +85,7 @@ export default function LandingPage() {
       <section className="closing">
         <h2>Train when you have time.</h2>
         <p>Watch when it works for you. Replay when you need to. No more sitting through someone else&apos;s slides.</p>
-        <a href="/training?id=67c529b6-38a1-4e60-8e7f-46fd1f155075" className="button">
+        <a href="/onboarding" className="button">
           Start your training →
         </a>
       </section>

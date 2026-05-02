@@ -81,7 +81,7 @@ export default function DashboardPage() {
 
       <h2 style={{ marginTop: "2rem" }}>Trainings</h2>
       {trainings.length === 0 ? (
-        <p className="muted">No trainings yet. <a href="/upload">Upload an SOP →</a></p>
+        <p className="muted">No trainings yet. <a href="/onboarding">Create training →</a></p>
       ) : (
         <div>
           {trainings.map((t) => (

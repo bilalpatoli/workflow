@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <img src="/workflow_secondary_lockup.svg" alt="WorkFlow" />
             </a>
             <nav className="site-nav">
-              <a href="/upload">Upload</a>
+              <a href="/onboarding">Create training</a>
               <a href="/dashboard">Dashboard</a>
             </nav>
           </div>

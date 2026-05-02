@@ -1,14 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { insertRow, DEMO_COMPANY_ID, type Sop, type Training } from "../../lib/butterbase";
 import { simulatePipeline } from "../../lib/mockPipeline";
 import { uploadFile } from "../../lib/storage";
+import { INTAKE_STORAGE_KEY, type IntakeProfile } from "../../lib/intake";
 
 type SourceType = "text" | "loom" | "file";
 
 const ACCEPTED_TYPES = ".pdf,.md,.txt,.doc,.docx";
+
+function prependIntakeContext(body: string, intake: IntakeProfile): string {
+  const header = [
+    "# Trainee context",
+    `- Role: ${intake.role}`,
+    `- Company: ${intake.company}`,
+    `- Experience level: ${intake.experience}`,
+    `- Training goal: ${intake.trainingGoal}`,
+    "",
+    "---",
+    "",
+  ].join("\n");
+  return header + body;
+}
 
 export default function UploadPage() {
   const router = useRouter();
@@ -20,6 +35,20 @@ export default function UploadPage() {
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [intake, setIntake] = useState<IntakeProfile | null>(null);
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem(INTAKE_STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as IntakeProfile;
+      setIntake(parsed);
+      if (parsed.trainingGoal && !title) setTitle(parsed.trainingGoal);
+    } catch {
+      // ignore malformed intake
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,7 +61,7 @@ export default function UploadPage() {
       let resolvedSourceUrl: string | null = null;
 
       if (sourceType === "text") {
-        resolvedSourceText = sourceText;
+        resolvedSourceText = intake ? prependIntakeContext(sourceText, intake) : sourceText;
       } else if (sourceType === "loom") {
         resolvedSourceUrl = loomUrl;
       } else if (sourceType === "file") {
@@ -90,8 +119,29 @@ export default function UploadPage() {
 
   return (
     <main>
+      <div className="section-label">
+        <span className="brand-bar" aria-hidden />
+        <span className="eyebrow">Step 2 of 2 · Add the source material</span>
+      </div>
       <h1>Create training</h1>
       <p className="muted">Paste text, drop a Loom URL, or upload a doc. We&apos;ll generate a training video, quiz, and checklist.</p>
+
+      {intake && (
+        <div className="card" style={{ background: "var(--ink-50)", marginTop: "1rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+            <div>
+              <div className="eyebrow" style={{ marginBottom: "0.4rem" }}>Training for</div>
+              <div style={{ fontWeight: 600 }}>{intake.role} · {intake.company}</div>
+              {intake.trainingGoal && (
+                <p className="muted" style={{ margin: "0.4rem 0 0", fontSize: "0.9rem" }}>{intake.trainingGoal}</p>
+              )}
+            </div>
+            <a href="/onboarding" className="button button-secondary" style={{ fontSize: "0.85rem", padding: "0.4rem 0.8rem" }}>
+              Edit
+            </a>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={onSubmit} className="card">
         <label>Title</label>
