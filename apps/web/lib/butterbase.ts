@@ -157,6 +157,7 @@ export type Training = {
   quiz_json: QuizItem[] | null;
   checklist_json: ChecklistItem[] | null;
   error: string | null;
+  creator_trainee_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -166,6 +167,8 @@ export type Trainee = {
   company_id: string;
   name: string;
   email: string;
+  role: string | null;
+  company_name: string | null;
   created_at: string;
 };
 

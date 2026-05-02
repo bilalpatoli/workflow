@@ -6,6 +6,8 @@ import { INTAKE_STORAGE_KEY, type IntakeProfile } from "../../lib/intake";
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
   const [company, setCompany] = useState("");
   const [trainingGoal, setTrainingGoal] = useState("");
@@ -13,7 +15,7 @@ export default function OnboardingPage() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const profile: IntakeProfile = { role, company, trainingGoal, experience };
+    const profile: IntakeProfile = { name, email, role, company, trainingGoal, experience };
     sessionStorage.setItem(INTAKE_STORAGE_KEY, JSON.stringify(profile));
     router.push("/upload");
   }
@@ -26,13 +28,32 @@ export default function OnboardingPage() {
       </div>
 
       <h1 className="display-l" style={{ marginBottom: "0.5rem" }}>
-        Tell us about the role.
+        Tell us about you and the role.
       </h1>
       <p className="body-l" style={{ marginBottom: "2rem" }}>
-        We&apos;ll use this to shape the training around your job — the language, the examples, and what &ldquo;done well&rdquo; looks like.
+        Your name and email so your manager can see your progress, plus a bit about the role so we can shape the training around your job.
       </p>
 
       <form onSubmit={onSubmit} className="card">
+        <label htmlFor="name">Your name</label>
+        <input
+          id="name"
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Jane Doe"
+        />
+
+        <label htmlFor="email">Work email</label>
+        <input
+          id="email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="e.g. jane@acme.ai"
+        />
+
         <label htmlFor="role">What were you hired for?</label>
         <input
           id="role"

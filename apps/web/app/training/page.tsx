@@ -13,9 +13,47 @@ import {
   type QuizItem,
   type ChecklistItem,
 } from "../../lib/butterbase";
+import { INTAKE_STORAGE_KEY, TRAINEE_STORAGE_KEY, type IntakeProfile } from "../../lib/intake";
 
 function StatusBadge({ status }: { status: Training["status"] }) {
   return <span className={`badge badge-${status}`}>{status}</span>;
+}
+
+const GENERATING_WORDS = [
+  "Planning",
+  "Scripting",
+  "Directing",
+  "Generating",
+  "Narrating",
+  "Stitching",
+];
+
+function GeneratingState() {
+  const [wordIndex, setWordIndex] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setWordIndex((i) => (i + 1) % GENERATING_WORDS.length);
+    }, 1400);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="card generating-card">
+      <div className="spinner-ring" aria-hidden />
+      <h2 style={{ fontSize: "1.5rem", marginBottom: "0.75rem" }}>
+        <span key={wordIndex} className="cycling-word">
+          {GENERATING_WORDS[wordIndex]}
+        </span>{" "}
+        your training…
+      </h2>
+      <p className="muted" style={{ maxWidth: "44ch", margin: "0 auto 0.5rem" }}>
+        Flowing through your material to script the scenes, narrate them, and stitch it all into one short video. Usually 1–2 minutes.
+      </p>
+      <p className="muted" style={{ fontSize: "0.85rem", margin: 0 }}>
+        This page will update on its own — no need to refresh.
+      </p>
+    </div>
+  );
 }
 
 function TrainingViewer({ trainingId }: { trainingId: string }) {
@@ -30,6 +68,24 @@ function TrainingViewer({ trainingId }: { trainingId: string }) {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [completed, setCompleted] = useState<{ score: number } | null>(null);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
+
+  // Hydrate trainee identity from the intake step. If we already created a
+  // trainee row at upload time, reuse it so the manager dashboard shows a
+  // single coherent identity per person.
+  useEffect(() => {
+    const savedId = sessionStorage.getItem(TRAINEE_STORAGE_KEY);
+    if (savedId) setTraineeId(savedId);
+    const rawIntake = sessionStorage.getItem(INTAKE_STORAGE_KEY);
+    if (rawIntake) {
+      try {
+        const intake = JSON.parse(rawIntake) as IntakeProfile;
+        if (intake.name) setTraineeName(intake.name);
+        if (intake.email) setTraineeEmail(intake.email);
+      } catch {
+        // ignore malformed intake
+      }
+    }
+  }, []);
 
   // Poll training row until ready
   useEffect(() => {
@@ -115,15 +171,9 @@ function TrainingViewer({ trainingId }: { trainingId: string }) {
         <StatusBadge status={training.status} />
       </p>
 
-      {training.status === "pending" || training.status === "generating" ? (
-        <div className="card">
-          <h2>Generating your training…</h2>
-          <p className="muted">
-            We're planning the script, generating each scene with Seedance, narrating with ElevenLabs, and stitching it together. This usually takes 1–2 minutes.
-          </p>
-          <p className="muted">Polling every 3 seconds. This page will update automatically.</p>
-        </div>
-      ) : null}
+      {(training.status === "pending" || training.status === "generating") && (
+        <GeneratingState />
+      )}
 
       {training.status === "failed" && (
         <div className="card">

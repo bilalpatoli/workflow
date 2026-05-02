@@ -1,86 +1,111 @@
-import { updateRow } from "./butterbase";
+import { selectOne, updateRow, type Sop } from "./butterbase";
 
 // Demo fallback that simulates Kyle's video pipeline client-side.
 // Kicks a training row through pending → generating → ready over ~20 seconds.
+//
+// While Kyle's full video pipeline isn't reachable, the quiz and checklist
+// are still generated against the real SOP text via the
+// `generate-quiz-and-checklist` Butterbase function (which calls Z.AI).
+// The video falls back to a stock sample MP4.
+//
 // Wire NEXT_PUBLIC_PIPELINE_URL to disable this and use the real pipeline.
 
 const SAMPLE_VIDEO_URL =
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
 
-const MOCK_QUIZ = [
+const apiUrl =
+  process.env.NEXT_PUBLIC_BUTTERBASE_API_URL ?? process.env.BUTTERBASE_API_URL;
+
+const VIDEO_DURATION_SECONDS = 10;
+
+const PLACEHOLDER_QUIZ = [
   {
     id: "q1",
-    question: "What is the first step in hiring a BDR?",
+    question: "We couldn't generate quiz questions from this source yet — what happened?",
     options: [
-      "Post on LinkedIn directly",
-      "Open the req in ATS with title, level, and target start date",
-      "Email candidates cold",
-      "Schedule the panel",
+      "The source was a Loom or file upload, so the quiz generator skipped it for now.",
+      "The system is broken.",
+      "The trainee skipped a step.",
+      "The manager hasn't reviewed it.",
     ],
-    correctIndex: 1,
-    rationale: "Step 1 of the SOP is to open a req in the ATS so sourcing and tracking are formal from day one.",
-  },
-  {
-    id: "q2",
-    question: "How long is the recruiter screen?",
-    options: ["15 minutes", "30 minutes", "45 minutes", "60 minutes"],
-    correctIndex: 1,
-    rationale: "The SOP allocates 30 minutes for the recruiter screen.",
-  },
-  {
-    id: "q3",
-    question: "What does the hiring-manager interview focus on?",
-    options: [
-      "A timed coding test",
-      "Role play and objection handling",
-      "A personality assessment",
-      "A background check",
-    ],
-    correctIndex: 1,
-    rationale: "BDRs need real-time persuasion and resilience, so the interview centers on role play and objection handling.",
-  },
-  {
-    id: "q4",
-    question: "How many references should be checked?",
-    options: [
-      "1, any colleague",
-      "2, prior managers preferred",
-      "3, peers only",
-      "5, mixed sources",
-    ],
-    correctIndex: 1,
-    rationale: "Two references, with prior managers preferred.",
+    correctIndex: 0,
+    rationale: "Quiz generation runs against the SOP text. File and Loom sources need the full pipeline to extract content first.",
   },
 ];
 
-const MOCK_CHECKLIST = [
-  { id: "c1", text: "Open req in ATS with title, level, and target start date" },
-  { id: "c2", text: "Source candidates via inbound + outbound LinkedIn outreach" },
-  { id: "c3", text: "Conduct recruiter screen (30 min)" },
-  { id: "c4", text: "Run hiring-manager interview (45 min) with role play" },
-  { id: "c5", text: "Assemble panel with sales leader + cross-functional peer" },
-  { id: "c6", text: "Complete 2 reference checks (prior managers preferred)" },
-  { id: "c7", text: "Send offer and close" },
+const PLACEHOLDER_CHECKLIST = [
+  { id: "c1", text: "Watch the full training video" },
+  { id: "c2", text: "Apply the steps to your next task" },
+  { id: "c3", text: "Ask your manager for one piece of feedback" },
 ];
 
-export function simulatePipeline(trainingId: string) {
-  // Step 1: pending → generating
-  setTimeout(() => {
-    updateRow("trainings", trainingId, { status: "generating" }).catch((e) => {
+async function generateQuizAndChecklist(sopText: string): Promise<{
+  quiz: typeof PLACEHOLDER_QUIZ;
+  checklist: typeof PLACEHOLDER_CHECKLIST;
+}> {
+  if (!apiUrl) throw new Error("Butterbase API URL not configured");
+  const res = await fetch(`${apiUrl}/fn/generate-quiz-and-checklist`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sop: sopText }),
+  });
+  if (!res.ok) {
+    throw new Error(`generate-quiz-and-checklist ${res.status}: ${await res.text()}`);
+  }
+  return res.json();
+}
+
+async function generateVideo(sopText: string): Promise<{ video_url: string; duration_seconds: number }> {
+  if (!apiUrl) throw new Error("Butterbase API URL not configured");
+  const res = await fetch(`${apiUrl}/fn/generate-video`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sop: sopText, duration: VIDEO_DURATION_SECONDS }),
+  });
+  if (!res.ok) {
+    throw new Error(`generate-video ${res.status}: ${await res.text()}`);
+  }
+  return res.json();
+}
+
+export function simulatePipeline(trainingId: string, sopId: string) {
+  // Linear flow so the prior race (setTimeout-driven "generating" overwrite
+  // landing AFTER the "ready" update) can't recur: flip to generating right
+  // away, then wait for both upstream calls, then flip to ready exactly once.
+  (async () => {
+    await updateRow("trainings", trainingId, { status: "generating" }).catch((e) => {
       console.error("Mock pipeline (generating) failed:", e);
     });
-  }, 5000);
 
-  // Step 2: generating → ready with mock video + quiz + checklist
-  setTimeout(() => {
-    updateRow("trainings", trainingId, {
-      status: "ready",
-      video_url: SAMPLE_VIDEO_URL,
-      duration_seconds: 60,
-      quiz_json: MOCK_QUIZ,
-      checklist_json: MOCK_CHECKLIST,
-    }).catch((e) => {
+    const sop = await selectOne<Sop>("sops", { id: `eq.${sopId}` }).catch(() => null);
+    const sopText = sop?.source_text ?? "";
+
+    const quizPromise: Promise<{ quiz: typeof PLACEHOLDER_QUIZ; checklist: typeof PLACEHOLDER_CHECKLIST }> = sopText
+      ? generateQuizAndChecklist(sopText).catch((e) => {
+          console.error("Mock pipeline (quiz/checklist) failed, using placeholders:", e);
+          return { quiz: PLACEHOLDER_QUIZ, checklist: PLACEHOLDER_CHECKLIST };
+        })
+      : Promise.resolve({ quiz: PLACEHOLDER_QUIZ, checklist: PLACEHOLDER_CHECKLIST });
+
+    const videoPromise: Promise<{ video_url: string; duration_seconds: number }> = sopText
+      ? generateVideo(sopText).catch((e) => {
+          console.error("Mock pipeline (video) failed, falling back to sample MP4:", e);
+          return { video_url: SAMPLE_VIDEO_URL, duration_seconds: 60 };
+        })
+      : Promise.resolve({ video_url: SAMPLE_VIDEO_URL, duration_seconds: 60 });
+
+    const [{ quiz, checklist }, video] = await Promise.all([quizPromise, videoPromise]);
+
+    try {
+      await updateRow("trainings", trainingId, {
+        status: "ready",
+        video_url: video.video_url,
+        duration_seconds: video.duration_seconds,
+        quiz_json: quiz?.length ? quiz : PLACEHOLDER_QUIZ,
+        checklist_json: checklist?.length ? checklist : PLACEHOLDER_CHECKLIST,
+      });
+    } catch (e) {
       console.error("Mock pipeline (ready) failed:", e);
-    });
-  }, 20000);
+    }
+  })();
 }
